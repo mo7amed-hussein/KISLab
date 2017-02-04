@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QLabel>
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -28,18 +29,28 @@ public:
     void closeFile();
     void closeAll();
 
+    void undo();
+    void redo();
+    void copy();
+    void cut();
+    void paste();
+    void del();
+    void selectall();
+
+
+ public slots:
+    void updateStatusBar(int l,int c);
 private :
     Terminal *terminal;
     Editor *editor;
     Browser *browser;
     QLabel *lineLabel;
     QLabel *colLabel;
-
-
     QDockWidget *terminalDock;
     QDockWidget *browserDock;
 
   //  QAction *newAction;
+    /*
     QAction *openAction;
     QAction *saveAction;
     QAction *saveAsAction;
@@ -73,7 +84,7 @@ private :
     QAction *contentAction;
     QAction *aboutLineAction;
     QAction *aboutQtAction;
-
+*/
 };
 
 #endif // MAINWINDOW_H

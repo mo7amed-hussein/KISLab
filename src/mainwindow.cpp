@@ -5,7 +5,9 @@
 #include<QMenuBar>
 #include<QToolBar>
 #include<QIcon>
-
+#include<QFileDialog>
+#include<QFile>
+#include<QDir>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -52,7 +54,7 @@ void MainWindow::createActions()
     QAction *saveAsAction=new QAction(saveAsIcon,tr("&SaveAs"),this);
     saveAsAction->setShortcut(QKeySequence::SaveAs);
     saveAsAction->setToolTip(tr("save a file as"));
-    connect(saveAsAction,&QAction::triggered,this,&MainWindow::save);
+    connect(saveAsAction,&QAction::triggered,this,&MainWindow::saveAs);
     fileMenu->addAction(saveAsAction);
     fileToolBar->addAction(saveAsAction);
 
@@ -60,7 +62,7 @@ void MainWindow::createActions()
     QAction *saveCopyAction=new QAction(saveCopyIcon,tr("&Save a Copy As"),this);
     saveCopyAction->setShortcut(QKeySequence::SaveAs);
     saveCopyAction->setToolTip(tr("save a copy as"));
-    connect(saveCopyAction,&QAction::triggered,this,&MainWindow::save);
+    connect(saveCopyAction,&QAction::triggered,this,&MainWindow::saveCopy);
     fileMenu->addAction(saveCopyAction);
    // fileToolBar->addAction(saveCopyAction);
 
@@ -78,7 +80,7 @@ void MainWindow::createActions()
     QAction *closeAction=new QAction(closeIcon,tr("Close"),this);
     closeAction->setShortcut(QKeySequence::SaveAs);
     closeAction->setToolTip(tr("close a file"));
-    connect(closeAction,&QAction::triggered,this,&MainWindow::save);
+    connect(closeAction,&QAction::triggered,this,&MainWindow::closeFile);
     fileMenu->addAction(closeAction);
     //fileToolBar->addAction(closeAction);
 
@@ -109,7 +111,7 @@ void MainWindow::createActions()
     QAction *undoAction=new QAction(undoIcon,tr("Undo"),this);
     undoAction->setShortcut(QKeySequence::Undo);
     undoAction->setToolTip(tr("undo"));
-    connect(undoAction,&QAction::triggered,this,&MainWindow::save);
+    connect(undoAction,&QAction::triggered,this,&MainWindow::undo);
     editMenu->addAction(undoAction);
     fileToolBar->addAction(undoAction);
 
@@ -117,7 +119,7 @@ void MainWindow::createActions()
     QAction *redoAction=new QAction(redoIcon,tr("Redo"),this);
     redoAction->setShortcut(QKeySequence::Redo);
     redoAction->setToolTip(tr("redo"));
-    connect(redoAction,&QAction::triggered,this,&MainWindow::save);
+    connect(redoAction,&QAction::triggered,this,&MainWindow::redo);
     editMenu->addAction(redoAction);
     fileToolBar->addAction(redoAction);
 
@@ -128,7 +130,7 @@ void MainWindow::createActions()
     QAction *cutAction=new QAction(cutIcon,tr("cut"),this);
     cutAction->setShortcut(QKeySequence::Cut);
     cutAction->setToolTip(tr("cut"));
-    connect(cutAction,&QAction::triggered,this,&MainWindow::save);
+    connect(cutAction,&QAction::triggered,this,&MainWindow::cut);
     editMenu->addAction(cutAction);
     fileToolBar->addAction(cutAction);
 
@@ -136,7 +138,7 @@ void MainWindow::createActions()
     QAction *copyAction=new QAction(copyIcon,tr("Copy"),this);
     copyAction->setShortcut(QKeySequence::Copy);
     copyAction->setToolTip(tr("copy"));
-    connect(copyAction,&QAction::triggered,this,&MainWindow::save);
+    connect(copyAction,&QAction::triggered,this,&MainWindow::copy);
     editMenu->addAction(copyAction);
     fileToolBar->addAction(copyAction);
 
@@ -144,7 +146,7 @@ void MainWindow::createActions()
     QAction *pasteAction=new QAction(pasteIcon,tr("paste"),this);
     pasteAction->setShortcut(QKeySequence::Paste);
     pasteAction->setToolTip(tr("paste"));
-    connect(pasteAction,&QAction::triggered,this,&MainWindow::save);
+    connect(pasteAction,&QAction::triggered,this,&MainWindow::paste);
     editMenu->addAction(pasteAction);
     fileToolBar->addAction(pasteAction);
     fileToolBar->addSeparator();
@@ -153,7 +155,7 @@ void MainWindow::createActions()
     QAction *delAction=new QAction(delIcon,tr("Delete"),this);
     delAction->setShortcut(QKeySequence::Delete);
     delAction->setToolTip(tr("delete"));
-    connect(delAction,&QAction::triggered,this,&MainWindow::save);
+    connect(delAction,&QAction::triggered,this,&MainWindow::del);
     editMenu->addAction(delAction);
     //fileToolBar->addAction(delAction);
 
@@ -161,7 +163,7 @@ void MainWindow::createActions()
     QAction *selectAction=new QAction(selectIcon,tr("Select All"),this);
     selectAction->setShortcut(QKeySequence::SelectAll);
     selectAction->setToolTip(tr("select all"));
-    connect(selectAction,&QAction::triggered,this,&MainWindow::save);
+    connect(selectAction,&QAction::triggered,this,&MainWindow::selectall);
     editMenu->addAction(selectAction);
     //fileToolBar->addAction(selectAction);
 
@@ -394,6 +396,8 @@ void MainWindow::createWidgets()
     browserDock->setWidget(terminal);
     addDockWidget(Qt::BottomDockWidgetArea,terminalDock);
 
+    connect(editor,&Editor::cursorChanged,this,&MainWindow::updateStatusBar);
+
 
 }
 
@@ -414,15 +418,92 @@ void MainWindow::createStatusBar()
 
 void MainWindow::newFile()
 {
-
+    editor->newFile();
 }
 
 void MainWindow::openfile()
 {
+    QString filename=QFileDialog::getOpenFileName(this,tr("open file"),QDir::currentPath(),
+         "(*.c *.cpp *.h *.asm *.xml)");
+
+    if(filename.isEmpty())
+        return;
+
+    editor->openFile(filename);
 
 }
 
 void MainWindow::save()
 {
+ editor->save();
+}
 
+void MainWindow::undo()
+{
+    editor->undo();
+}
+
+void MainWindow::redo()
+{
+    editor->redo();
+}
+
+void MainWindow::copy()
+{
+    editor->copy();
+}
+
+void MainWindow::cut()
+{
+    editor->cut();
+}
+
+void MainWindow::paste()
+{
+    editor->paste();
+}
+
+void MainWindow::del()
+{
+    editor->del();
+}
+
+void MainWindow::selectall()
+{
+    editor->selectAll();
+}
+
+void MainWindow::saveAs()
+{
+    QString filename=QFileDialog::getSaveFileName(this,tr("save as"));
+    if(filename.isEmpty())
+        return;
+    editor->saveAs(filename);
+
+}
+
+void MainWindow::saveAll()
+{
+
+}
+
+void MainWindow::saveCopy()
+{
+    QString filename=QFileDialog::getSaveFileName(this,tr("save as"));
+    if(filename.isEmpty())
+        return;
+    editor->saveCopy(filename);
+
+}
+void MainWindow::closeFile()
+{
+    editor->close();
+}
+
+void MainWindow::updateStatusBar(int l,int c)
+{
+    QString line=tr("Line : %1").arg(l);
+    QString col=tr("Col : %1").arg(c);
+    lineLabel->setText(line);
+    colLabel->setText(col);
 }
