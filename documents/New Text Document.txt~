@@ -1,0 +1,10 @@
+http://qtsimplify.blogspot.com.eg/2013/08/code-editor-in-making.html
+http://www.linuxfromscratch.org/blfs/view/cvs/lxqt/qscintilla.html
+
+99119034
+
+sudo iptables -F
+
+
+
+sudo rm -f /etc/NetworkManager/system-connections/*; sudo pkill -9 NetworkManager

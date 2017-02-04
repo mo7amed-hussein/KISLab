@@ -1,0 +1,11 @@
+prefix=/usr/local
+libdir=${prefix}/lib/x86_64-linux-gnu
+includedir=${prefix}/include
+
+Name: qtermwidget5
+Description: QTermWidget library for Qt 0.x
+Version: 0.6.0
+Requires: Qt5Core, Qt5Xml, Qt5Widgets
+Libs: -L${libdir} -lqtermwidget5
+Cflags: -I${includedir} -I${includedir}/qtermwidget5
+

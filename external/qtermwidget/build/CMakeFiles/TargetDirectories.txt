@@ -1,0 +1,3 @@
+/media/mohamed/01CEBB396ADB73E0/my projects/KISLab/external/qtermwidget/build/CMakeFiles/dist.dir
+/media/mohamed/01CEBB396ADB73E0/my projects/KISLab/external/qtermwidget/build/CMakeFiles/qtermwidget5.dir
+/media/mohamed/01CEBB396ADB73E0/my projects/KISLab/external/qtermwidget/build/CMakeFiles/uninstall.dir
