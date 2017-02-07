@@ -6,6 +6,14 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QLabel>
+#include<QEvent>
+#include <finddialog.h>
+#include<aboutdialog.h>
+#define MAX_RECENT_FILES  6
+
+struct RecentFile{
+    QString filePath;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -37,54 +45,58 @@ public:
     void del();
     void selectall();
 
+    void find();
+    void quitApp();
+    void checkClipboard();
+    void about();
+
+    void readSetting();
+    void saveSetting();
+
 
  public slots:
     void updateStatusBar(int l,int c);
+    void toggleStatusbar();
+    void goLineSlot();
+    void toLowerSlot();
+    void toUpperSlot();
+    void timeStampSlot();
+    void copyFileName();
+    void copyFullPath();
+    void copyDir();
+    void fileStatSlot();
+    void checkCopy(bool b);
+    void fileChangedSlot(bool s);
+    void openRecent();
+    void createRecentfilesActions();
+
+ protected:
+
+   virtual bool event(QEvent * event);
+    virtual void dragEnterEvent(QDragEnterEvent *event);
+    virtual void dropEvent(QDropEvent *event);
+    virtual void closeEvent(QCloseEvent * event);
+
 private :
     Terminal *terminal;
     Editor *editor;
     Browser *browser;
     QLabel *lineLabel;
-    QLabel *colLabel;
+
     QDockWidget *terminalDock;
     QDockWidget *browserDock;
-
-  //  QAction *newAction;
-    /*
-    QAction *openAction;
-    QAction *saveAction;
-    QAction *saveAsAction;
-    QAction *saveAllAction;
-    QAction *saveCopyAction;
-    QAction *closeAction;
-    QAction *closeAllAction;
-    QAction *quitAction;
-
+    FindDialog *findDialog;
+    QAction *recentFilesActions[MAX_RECENT_FILES];
+    QList<RecentFile> recentFiles;
+    QList<QAction*> recentActions;
     QAction *undoAction;
     QAction *redoAction;
     QAction *copyAction;
     QAction *cutAction;
     QAction *pasteAction;
-    QAction *deleteAction;
-    QAction *selectAllAction;
-    QAction *prefAction;
-
-
-    QAction *statusAction;
-    QAction *browserAction;
-    QAction *terminalAction;
-    QAction *findAction;
-    QAction *replaceAction;
-    QAction *findNextAction;
-    QAction *findPrevAction;
-    QAction *goLineAction;
-
-
-    QAction *fileStatAction;
-    QAction *contentAction;
-    QAction *aboutLineAction;
-    QAction *aboutQtAction;
-*/
+    QAction *delAction;
+    QMenu * caseMenu;
+    QMenu *fileMenu;
 };
 
 #endif // MAINWINDOW_H
