@@ -1,3 +1,22 @@
+/***************************************************************************
+ *   Copyright (C) 2017 by Mohamed Hussein                                 *
+ *   m.hussein1389@gmail.com                                               *
+     https://github.com/mo7amed-hussein/                                   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
+ *                                                                         *
+ ***************************************************************************/
 #include "mainwindow.h"
 #include<QDockWidget>
 #include<QStatusBar>
@@ -16,21 +35,26 @@
 #include<QMimeData>
 #include<QDragEnterEvent>
 #include<QSettings>
+#include"settingdialog.h"
+#include<QStringList>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    readSetting();
-
     createWidgets();
+    readSetting();
     createStatusBar();
     createActions();
+    checkClipboard();
+    newFile();
+
     this->resize(800,600);
     this->setAcceptDrops(true);
     this->setAutoFillBackground(true);
-    checkClipboard();
 
-
-
+    lastActivated.start();
+    autosaveTimer.setSingleShot(false);
+    updateSetting();
 }
 
 MainWindow::~MainWindow()
@@ -94,7 +118,7 @@ void MainWindow::createActions()
 
     fileToolBar->addSeparator();
 
-    const QIcon closeIcon=QIcon::fromTheme("document-saveas",QIcon(":/images/icons/save.png"));
+    const QIcon closeIcon=QIcon::fromTheme("document-close",QIcon(":/images/icons/save.png"));
     QAction *closeAction=new QAction(closeIcon,tr("Close"),this);
     closeAction->setShortcut(QKeySequence::SaveAs);
     closeAction->setToolTip(tr("close a file"));
@@ -116,7 +140,7 @@ void MainWindow::createActions()
    // fileMenu->addSeparator();
 
     const QIcon quitIcon=QIcon::fromTheme("document-saveas",QIcon(":/images/icons/save.png"));
-    QAction *quitAction=new QAction(quitIcon,tr("Quit"),this);
+    quitAction=new QAction(quitIcon,tr("Quit"),this);
     quitAction->setShortcut(QKeySequence::SaveAs);
     quitAction->setToolTip(tr("Quit KISLab"));
     connect(quitAction,&QAction::triggered,this,&MainWindow::quitApp);
@@ -126,7 +150,7 @@ void MainWindow::createActions()
     QMenu *editMenu=menuBar()->addMenu(tr("&Edit"));
     fileToolBar->addSeparator();
 
-    const QIcon undoIcon=QIcon::fromTheme("document-undo",QIcon(":/images/icons/undo.png"));
+    const QIcon undoIcon=QIcon::fromTheme("edit-undo",QIcon(":/images/icons/undo.png"));
     undoAction=new QAction(undoIcon,tr("Undo"),this);
     undoAction->setShortcut(QKeySequence::Undo);
     undoAction->setToolTip(tr("undo"));
@@ -135,7 +159,7 @@ void MainWindow::createActions()
     editMenu->addAction(undoAction);
     fileToolBar->addAction(undoAction);
 
-    const QIcon redoIcon=QIcon::fromTheme("document-redo",QIcon(":/images/icons/redo.png"));
+    const QIcon redoIcon=QIcon::fromTheme("edit-redo",QIcon(":/images/icons/redo.png"));
     redoAction=new QAction(redoIcon,tr("Redo"),this);
     redoAction->setShortcut(QKeySequence::Redo);
     redoAction->setToolTip(tr("redo"));
@@ -147,7 +171,7 @@ void MainWindow::createActions()
     editMenu->addSeparator();
     fileToolBar->addSeparator();
 
-    const QIcon cutIcon=QIcon::fromTheme("document-cut",QIcon(":/images/icons/cut.png"));
+    const QIcon cutIcon=QIcon::fromTheme("edit-cut",QIcon(":/images/icons/cut.png"));
     cutAction=new QAction(cutIcon,tr("cut"),this);
     cutAction->setShortcut(QKeySequence::Cut);
     cutAction->setToolTip(tr("cut"));
@@ -156,7 +180,7 @@ void MainWindow::createActions()
     editMenu->addAction(cutAction);
     fileToolBar->addAction(cutAction);
 
-    const QIcon copyIcon=QIcon::fromTheme("document-copy",QIcon(":/images/icons/copy.png"));
+    const QIcon copyIcon=QIcon::fromTheme("edit-copy",QIcon(":/images/icons/copy.png"));
     copyAction=new QAction(copyIcon,tr("Copy"),this);
     copyAction->setShortcut(QKeySequence::Copy);
     copyAction->setToolTip(tr("copy"));
@@ -175,7 +199,7 @@ void MainWindow::createActions()
     fileToolBar->addAction(pasteAction);
     fileToolBar->addSeparator();
 
-    const QIcon delIcon=QIcon::fromTheme("document-delete",QIcon(":/images/icons/del.png"));
+    const QIcon delIcon=QIcon::fromTheme("edit-delete",QIcon(":/images/icons/del.png"));
     delAction=new QAction(delIcon,tr("Delete"),this);
     delAction->setShortcut(QKeySequence::Delete);
     delAction->setToolTip(tr("delete"));
@@ -184,8 +208,8 @@ void MainWindow::createActions()
     editMenu->addAction(delAction);
     //fileToolBar->addAction(delAction);
 
-    const QIcon selectIcon=QIcon::fromTheme("document-select",QIcon(":/images/icons/select.png"));
-    QAction *selectAction=new QAction(selectIcon,tr("Select All"),this);
+    const QIcon selectIcon=QIcon::fromTheme("edit-selectall",QIcon(":/images/icons/select.png"));
+    selectAction=new QAction(selectIcon,tr("Select All"),this);
     selectAction->setShortcut(QKeySequence::SelectAll);
     selectAction->setToolTip(tr("select all"));
     connect(selectAction,&QAction::triggered,this,&MainWindow::selectall);
@@ -195,7 +219,7 @@ void MainWindow::createActions()
     editMenu->addSeparator();
 
     const QIcon clipboardIcon=QIcon::fromTheme("document-pref",QIcon(":/images/icons/pref.png"));
-    QMenu *clipMenu=editMenu->addMenu(clipboardIcon,"copy To ClipBoard");
+    clipMenu=editMenu->addMenu(clipboardIcon,"copy To ClipBoard");
 
     const QIcon filePathIcon=QIcon::fromTheme("document-filePath",QIcon(":/images/icons/filePath.png"));
     QAction *filePathAction=new QAction(filePathIcon,tr("Current Full File Path"),this);
@@ -240,43 +264,8 @@ void MainWindow::createActions()
     caseMenu->addAction(lowCaseAction);
     //fileToolBar->addAction(lowCaseAction);
 
-    //const QIcon commentIcon=QIcon::fromTheme("document-pref",QIcon(":/images/icons/pref.png"));
-    //QMenu *commentMenu=editMenu->addMenu(commentIcon,"Comment/UnComment");
-
-    const QIcon lineCommentIcon=QIcon::fromTheme("document-lineComment",QIcon(":/images/icons/lineComment.png"));
-    QAction *lineCommentAction=new QAction(lineCommentIcon,tr("Single Line Comment"),this);
-   // lineCommentAction->setShortcut(QKeySequence::);
-    lineCommentAction->setToolTip(tr("single line comment"));
-    //connect(lineCommentAction,&QAction::triggered,this,&MainWindow::save);
-    //commentMenu->addAction(lineCommentAction);
-    //fileToolBar->addAction(lineCommentAction);
-
-    const QIcon lineUnCommentIcon=QIcon::fromTheme("document-lineUnComment",QIcon(":/images/icons/lineUnComment.png"));
-    QAction *lineUnCommentAction=new QAction(lineUnCommentIcon,tr("Single Line UnComment"),this);
-   // lineUnCommentAction->setShortcut(QKeySequence::);
-    lineUnCommentAction->setToolTip(tr("single line uncomment"));
-    //co//nnect(lineUnCommentAction,&QAction::triggered,this,&MainWindow::save);
-    //c//ommentMenu->addAction(lineUnCommentAction);
-    //fileToolBar->addAction(lineUnCommentAction);
-
-    const QIcon blockCommentIcon=QIcon::fromTheme("document-blockComment",QIcon(":/images/icons/blockComment.png"));
-    QAction *blockCommentAction=new QAction(blockCommentIcon,tr("Block Comment"),this);
-   // blockCommentAction->setShortcut(QKeySequence::);
-    blockCommentAction->setToolTip(tr("block comment"));
-    //connect(blockCommentAction,&QAction::triggered,this,&MainWindow::save);
-    //commentMenu->addAction(blockCommentAction);
-    //fileToolBar->addAction(blockCommentAction);
-
-    const QIcon blockUnUnComIcon=QIcon::fromTheme("document-blockUnCom",QIcon(":/images/icons/blockUnCom.png"));
-    QAction *blockUnComAction=new QAction(blockUnUnComIcon,tr("Block UnCom"),this);
-   // blockUnComAction->setShortcut(QKeySequence::);
-    blockUnComAction->setToolTip(tr("block UnCommment"));
-    //connect(blockUnComAction,&QAction::triggered,this,&MainWindow::save);
-   // commentMenu->addAction(blockUnComAction);
-    //fileToolBar->addAction(blockUnComAction);
-
     const QIcon timeIcon=QIcon::fromTheme("document-time",QIcon(":/images/icons/time.png"));
-    QAction *timeAction=new QAction(timeIcon,tr("Time/Date"),this);
+    timeAction=new QAction(timeIcon,tr("Time/Date"),this);
    // timeAction->setShortcut(QKeySequence::);
     timeAction->setToolTip(tr("Time/Date"));
     connect(timeAction,&QAction::triggered,this,&MainWindow::timeStampSlot);
@@ -289,7 +278,7 @@ void MainWindow::createActions()
     QAction *prefAction=new QAction(prefIcon,tr("Preferences"),this);
     prefAction->setShortcut(QKeySequence::Preferences);
     prefAction->setToolTip(tr("preferences"));
-    connect(prefAction,&QAction::triggered,this,&MainWindow::save);
+    connect(prefAction,&QAction::triggered,this,&MainWindow::openSetting);
     editMenu->addAction(prefAction);
     //fileToolBar->addAction(prefAction);
 
@@ -297,82 +286,41 @@ void MainWindow::createActions()
 
     viewMenu->addAction(browserDock->toggleViewAction());
     viewMenu->addAction(terminalDock->toggleViewAction());
+
     QAction *statusBarAction=new QAction(tr("StatusBar"),this);
-   // statusBarAction->setShortcut(QKeySequence::statusBarerences);
-    statusBarAction->setToolTip(tr("statusBar"));
     statusBarAction->setCheckable(true);
     connect(statusBarAction,&QAction::triggered,this,&MainWindow::toggleStatusbar);
-    statusBarAction->setCheckable(true);
     statusBarAction->setChecked(true);
     viewMenu->addAction(statusBarAction);
     //viewMenu->addAction(statusBar()->);
 
-    QMenu *searchMenu=menuBar()->addMenu(tr("Search"));
+    searchMenu=menuBar()->addMenu(tr("Search"));
 
-    const QIcon findIcon=QIcon::fromTheme("document-find",QIcon(":/images/icons/find.png"));
-    QAction *findAction=new QAction(findIcon,tr("Find"),this);
+    const QIcon findIcon=QIcon::fromTheme("edit-find",QIcon(":/images/icons/find.png"));
+    findAction=new QAction(findIcon,tr("Find"),this);
     findAction->setShortcut(QKeySequence::Find);
     findAction->setToolTip(tr("find"));
     connect(findAction,&QAction::triggered,this,&MainWindow::find);
     searchMenu->addAction(findAction);
     fileToolBar->addAction(findAction);
 
-    const QIcon findNxtIcon=QIcon::fromTheme("document-findNxt",QIcon(":/images/icons/findNxt.png"));
-    QAction *findNxtAction=new QAction(findNxtIcon,tr("Find Next"),this);
-    findNxtAction->setShortcut(QKeySequence::FindNext);
-    findNxtAction->setToolTip(tr("find next"));
-    //connect(findNxtAction,&QAction::triggered,this,&MainWindow::save);
-    //searchMenu->addAction(findNxtAction);
-    //fileToolBar->addAction(findNxtAction);
-   // findNxtAction->setDisabled(true);
-
-    const QIcon findPrevIcon=QIcon::fromTheme("document-findPrev",QIcon(":/images/icons/findPrev.png"));
-    QAction *findPrevAction=new QAction(findPrevIcon,tr("Find Previous"),this);
-    findPrevAction->setShortcut(QKeySequence::FindPrevious);
-    findPrevAction->setToolTip(tr("find Previous"));
-    //connect(findPrevAction,&QAction::triggered,this,&MainWindow::save);
-    //searchMenu->addAction(findPrevAction);
-    //fileToolBar->addAction(findPrevAction);
-
-    const QIcon replaceIcon=QIcon::fromTheme("document-replace",QIcon(":/images/icons/replace.png"));
-    QAction *replaceAction=new QAction(replaceIcon,tr("Replace"),this);
-    replaceAction->setShortcut(QKeySequence::Replace);
-    replaceAction->setToolTip(tr("Replace"));
-    //connect(replaceAction,&QAction::triggered,this,&MainWindow::save);
-    //searchMenu->addAction(replaceAction);
-   // fileToolBar->addAction(replaceAction);
-
     const QIcon goLineIcon=QIcon::fromTheme("document-goLine",QIcon(":/images/icons/goLine.png"));
-    QAction *goLineAction=new QAction(goLineIcon,tr("GoTo Line"),this);
-   // goLineAction->setShortcut(QKeySequence::goLine);
-    goLineAction->setToolTip(tr("goto line"));
+    goLineAction=new QAction(goLineIcon,tr("GoTo Line"),this);
     connect(goLineAction,&QAction::triggered,this,&MainWindow::goLineSlot);
     searchMenu->addAction(goLineAction);
     //fileToolBar->addAction(goLineAction);
 
     QMenu *toolMenu=menuBar()->addMenu(tr("Tools"));
     const QIcon fileStatIcon=QIcon::fromTheme("document-fileStat",QIcon(":/images/icons/fileStat.png"));
-    QAction *fileStatAction=new QAction(fileStatIcon,tr("File Statistics"),this);
-   // fileStatAction->setShortcut(QKeySequence::fileStat);
-    fileStatAction->setToolTip(tr("File Statistics"));
+    fileStatAction=new QAction(fileStatIcon,tr("File Statistics"),this);
     connect(fileStatAction,&QAction::triggered,this,&MainWindow::fileStatSlot);
     toolMenu->addAction(fileStatAction);
     //fileToolBar->addAction(fileStatAction);
 
     QMenu *helpMenu=menuBar()->addMenu(tr("Help"));
 
-    const QIcon contentIcon=QIcon::fromTheme("document-content",QIcon(":/images/icons/content.png"));
-    QAction *contentAction=new QAction(contentIcon,tr("Contents"),this);
-   // contentAction->setShortcut(QKeySequence::content);
-    contentAction->setToolTip(tr("contents"));
-    //connect(contentAction,&QAction::triggered,this,&MainWindow::save);
-    //helpMenu->addAction(contentAction);
-    //fileToolBar->addAction(contentAction);
-
     const QIcon aboutIcon=QIcon::fromTheme("document-about",QIcon(":/images/icons/about.png"));
     QAction *aboutAction=new QAction(aboutIcon,tr("about"),this);
-   // aboutAction->setShortcut(QKeySequence::about);
-    aboutAction->setToolTip(tr("about"));
     connect(aboutAction,&QAction::triggered,this,&MainWindow::about);
     helpMenu->addAction(aboutAction);
     //fileToolBar->addAction(aboutAction);
@@ -385,23 +333,8 @@ void MainWindow::createActions()
     helpMenu->addAction(aboutQtAction);
     //fileToolBar->addAction(aboutQtAction);
 
-
-    //helpMenu->activeAction()
-
-
-
-
 }
 
-void MainWindow::createToolBar()
-{
-
-}
-
-void MainWindow::createMenuBar()
-{
-
-}
 
 void MainWindow::createWidgets()
 {
@@ -409,31 +342,34 @@ void MainWindow::createWidgets()
     setCentralWidget(editor);
 
     browserDock=new QDockWidget(tr("Files"));
-   // browserDock->setFixedWidth();
     browser =new Browser(browserDock);
-
+    browserDock->setFeatures(QDockWidget::NoDockWidgetFeatures|QDockWidget::DockWidgetClosable);
     browserDock->setWidget(browser);
+    browserDock->setContextMenuPolicy(Qt::PreventContextMenu);
+
     addDockWidget(Qt::RightDockWidgetArea,browserDock);
 
     terminalDock=new QDockWidget(tr("Terminal"));
+    terminalDock->setFeatures(QDockWidget::DockWidgetClosable);
     terminal=new Terminal(terminalDock);
     terminalDock->setWidget(terminal);
-    terminalDock->setFloating(false);
     terminalDock->setAcceptDrops(false);
     terminalDock->setContextMenuPolicy(Qt::PreventContextMenu);
-    browserDock->setContextMenuPolicy(Qt::PreventContextMenu);
+
+    addDockWidget(Qt::BottomDockWidgetArea,terminalDock);
 
     connect(terminal,&Terminal::closeTerminaldock,terminalDock,&QDockWidget::hide);
     connect(terminalDock,&QDockWidget::visibilityChanged,terminal,&Terminal::toggleShow);
-    addDockWidget(Qt::BottomDockWidgetArea,terminalDock);
-
     connect(editor,SIGNAL(cursorChanged(int,int)),this,SLOT(updateStatusBar(int,int)));
     connect(editor,&Editor::fileIsNew,this,&MainWindow::saveAs);
     connect(browser,&Browser::showFile,editor,&Editor::showDoc);
     connect(browser,&Browser::closeFile,editor,&Editor::closeFile);
     connect(editor,&Editor::copyChangedSig,this,&MainWindow::checkCopy);
     connect(editor,&Editor::fileChangedSig,this,&MainWindow::fileChangedSlot);
-
+    connect(editor,&Editor::filenameChanged,browser,&Browser::changeFilename);
+    connect(editor,&Editor::removeFile,browser,&Browser::removeChild);
+    connect(editor,&Editor::noFilesChanged,this,&MainWindow::noFilesChanged);
+    connect(&autosaveTimer,&QTimer::timeout,this,&MainWindow::autosavefiles);
 }
 
 void MainWindow::createStatusBar()
@@ -444,32 +380,75 @@ void MainWindow::createStatusBar()
 
     lineLabel->setAlignment(Qt::AlignHCenter);
     lineLabel->setFrameStyle(QFrame::NoFrame);
-    //lineLabel->setMargin(10);
-   // colLabel=new QLabel();
-    //colLabel->setText("col : 0");
-
     statusBar()->addPermanentWidget(lineLabel,0);
-   // statusBar()->addPermanentWidget(colLabel);
-    statusBar()->showMessage("wellcome To KISLab");
+    statusBar()->showMessage("Keep It Simple");
     statusBar()->adjustSize();
 
 }
 
 void MainWindow::newFile()
 {
-    editor->newFile();
+    QString name=editor->newFile();
+    browser->addfile(name,"");
 }
 
 void MainWindow::openfile()
 {
-    QString filename=QFileDialog::getOpenFileName(this,tr("open file"),QDir::currentPath(),
-         "(*.c *.cpp *.h *.asm *.xml)");
+    QStringList filePaths=QFileDialog::getOpenFileNames(this,tr("Select one or more files to open"),QDir::currentPath(),
+         "All files (*.*);;"
+         "Normal text file (*.txt *.ini);;"
+         "Batch file (*.bat *.cmd *.nt);;"
+         "C/C++ source file (*.c *.cpp *.cc *.cxx *.h *.hpp *.hxx);;"
+         "C# source file (*.cs);;"
+         "CMake file (*.cmake);;"
+         "CoffeeScript file(*.litcoffee);;"
+         "CSS file (*.css );;"
+         "D file (*.d);;"
+         "Diff file(*.diff *.patch);;"
+         "Fortran free form (*.f *.for *.f90 *.f95 *.f2k);;"
+         "Fortran fixed form (*.f77);;"
+         "HTML file (*.htm *.html *.shtm *.shtml *.xhtml *.hta);;"
+         "Java source file (*.java);;"
+         "Java script file (*.js);;"
+         "Lua script file (*.lua);;"
+         "Makefile (*.mak);;"
+         "Matlab file(*.m);;"
+         "Pascal file (*.pas *.inc);;"
+         "Perl file (*pl *.pm *.plx);;"
+         "Postscript file (*.ps);;"
+         "Properties file (*.properties);;"
+         "Python file (*.py *.pyw);;"
+         "Ruby file (*.rb *.rbw);;"
+         "SQL file(*.sql);;"
+         "TCL file (*.tcl);;"
+         "TeX file (*.tex);;"
+         "VHDL file (*.vhd *.vhdl);;"
+         "Verilog file (*.v *.sv *.vh *.svh);;"
+         "XML file (*.xml *.xsml *.xsl *.kml *.wsdl *.xlf *xliff);;"
+         "YAML file (*.yml)");
 
-    if(filename.isEmpty())
-        return;
+    foreach (QString file,filePaths)
+    {
 
-    editor->openFile(filename);
-    browser->addfile(filename,"");
+        if(file.isEmpty())
+            return;
+
+        QFileInfo f(file);
+        if(!browser->checkOpenedFile(f.fileName(),file))
+        {
+        editor->openFile(file);
+
+        browser->addfile(f.fileName(),file);
+
+        addRecentFile(file);
+        createRecentfilesActions();
+        }
+
+
+    }
+
+
+
 
 }
 
@@ -545,10 +524,8 @@ void MainWindow::closeFile()
 void MainWindow::updateStatusBar(int l,int c)
 {
     QString line=tr("Ln: %1 , col: %2      ").arg(l).arg(c);
-   // QString col=tr("Col : %1").arg(c);
-    lineLabel->setText(line);
 
-    //colLabel->setText(col);
+    lineLabel->setText(line);
 }
 
 void MainWindow::closeAll()
@@ -558,8 +535,9 @@ void MainWindow::closeAll()
 
 void MainWindow::find()
 {
-editor->showFindDialog();
+ editor->showFindWidget();
 }
+
 void MainWindow::toggleStatusbar()
 {
     if(statusBar()->isHidden())
@@ -576,28 +554,33 @@ void MainWindow::toggleStatusbar()
  {
      if(editor->closeAll())
      {
-     qApp->quit();
+        saveSetting();
+        qApp->quit();
      }
  }
 
  bool MainWindow::event(QEvent * event)
  {
+
      switch (event->type()) {
      case QEvent::WindowActivate:
-         qDebug()<<"activated";
+          //  qDebug()<<"elapsed "<<lastActivated.elapsed();
+            if(lastActivated.elapsed()>30000)
+            {
+                //qDebug()<<"check for change";
+                editor->checkExternalChange();
 
-         break;
+            }
+
+             break;
      case QEvent::WindowDeactivate:
-         qDebug()<<"deactivated";
-
-         break;
-
+                 lastActivated.restart();
+                 //qDebug()<<"deactivated";
+                 break;
      case QEvent::Clipboard:
-         qDebug()<<"clipboard";
-         checkClipboard();
-
+         //qDebug()<<"clipboard";
+             checkClipboard();
          break;
-
      default:
          break;
      }
@@ -620,7 +603,7 @@ void MainWindow::toggleStatusbar()
  }
  void MainWindow::timeStampSlot()
  {
-editor->timeStamp();
+   editor->timeStamp();
  }
  void MainWindow::copyFileName()
  {
@@ -635,7 +618,6 @@ editor->timeStamp();
 
      QClipboard *clip=QApplication::clipboard();
      clip->setText(editor->getCurrentFilePath());
-
  }
 
  void MainWindow::copyDir()
@@ -685,7 +667,7 @@ editor->timeStamp();
      if (event->mimeData()->hasFormat(QLatin1String("text/uri-list")))
          {
              event->acceptProposedAction();
-             this->setBackgroundRole(QPalette::Highlight);
+            // this->setBackgroundRole(QPalette::Highlight);
          }
 
  }
@@ -717,7 +699,7 @@ editor->timeStamp();
          }
 
      }
-     setBackgroundRole(QPalette::NoRole);
+  //   setBackgroundRole(QPalette::NoRole);
 
  }
 
@@ -741,21 +723,23 @@ editor->timeStamp();
  {
      QSettings setting;
     int size=setting.beginReadArray("recentFiles");
-    for(int i=0;i<size;i++)
+    for(int i=0;i<size && i<MAX_RECENT_FILES;i++)
     {
         RecentFile f;
         setting.setArrayIndex(i);
         f.filePath=setting.value("filePath","").toString();
         recentFiles.append(f);
     }
-    qDebug()<<"sizes "<<size<<recentFiles.size();
+     setting.endArray();
+     bool maxFlag=setting.value("WINDOWSTATE",false).toBool();
+    if(maxFlag)
+    {
+        this->showMaximized();
+    }
+     browserDock->setHidden(setting.value("BROWSERSTATE",true).toBool());
+     terminalDock->setHidden(setting.value("TERMINALSTATE",true).toBool());
 
-        RecentFile f;
-        f.filePath="/home/mohamed/KISLab/include/texteditor.h";
-        //setting.setArrayIndex(i);
-        recentFiles.append(f);
-
-
+    // qDebug()<<"list sizes "<<list.size();
 
  }
 
@@ -765,7 +749,18 @@ editor->timeStamp();
      if(action)
        {
      qDebug()<<action->data().toString();
-     editor->openFile(action->data().toString());
+
+     QFileInfo f(action->data().toString());
+     if(!browser->checkOpenedFile(f.fileName(),action->data().toString()))
+     {
+      editor->openFile(action->data().toString());
+   //  editor->openFile(filename);
+
+     browser->addfile(f.fileName(),action->data().toString());
+
+
+     }
+
      }
 
 
@@ -773,9 +768,17 @@ editor->timeStamp();
  }
  void MainWindow::createRecentfilesActions()
  {
-     recentActions.clear();
+     //recentActions.clear();
      int size=recentFiles.size();
-     qDebug()<<"sizes "<<recentFiles.size();
+     int recentAc=recentActions.size();
+   //  qDebug()<<"sizes "<<recentFiles.size();
+     for(int i=0;i<recentAc;i++)
+     {
+         fileMenu->removeAction(recentActions[i]);
+         delete recentActions[i];
+
+     }
+     recentActions.clear();
      for(int i=0;i<size && i<MAX_RECENT_FILES;i++)
      {
          QFileInfo f(recentFiles[i].filePath);
@@ -790,8 +793,101 @@ editor->timeStamp();
      }
      if(size>0)
      {
-         fileMenu->addActions(recentActions);
-         fileMenu->addSeparator();
+         fileMenu->insertActions(quitAction,recentActions);
+         fileMenu->insertSeparator(quitAction);
 
      }
  }
+void MainWindow::addRecentFile(QString &file)
+ {
+     RecentFile f;
+     f.filePath=file;
+     recentFiles.push_front(f);
+     if(recentFiles.size()>MAX_RECENT_FILES)
+     {
+         recentFiles.pop_back();
+     }
+
+ }
+
+void MainWindow::openSetting()
+ {
+    menuBar()->setEnabled(false);
+     SettingDialog s(this);
+     if(s.exec()==1)
+     {
+         editor->updateSetting();
+         this->updateSetting();
+     }
+     menuBar()->setEnabled(true);
+ }
+
+void MainWindow::saveSetting()
+ {
+     QSettings setting;
+    int size=recentFiles.size();
+    setting.beginWriteArray("recentFiles");
+    for(int i=0;i<size && i<MAX_RECENT_FILES;i++)
+    {
+
+        setting.setArrayIndex(i);
+        setting.setValue("filePath",recentFiles[i].filePath);
+
+    }
+    setting.endArray();
+    setting.setValue("WINDOWSTATE",this->isMaximized());
+    setting.setValue("BROWSERSTATE",browserDock->isHidden());
+    setting.setValue("TERMINALSTATE",terminalDock->isHidden());
+
+ }
+
+void MainWindow::noFilesChanged(bool b)
+ {
+     if(b)
+     {
+         pasteAction->setEnabled(false);
+         fileStatAction->setEnabled(false);
+        findAction->setEnabled(false);
+        goLineAction->setEnabled(false);
+         timeAction->setEnabled(false);
+         clipMenu->setEnabled(false);
+         selectAction->setEnabled(false);
+
+     }
+     else
+     {
+         checkClipboard();
+         fileStatAction->setEnabled(true);
+         findAction->setEnabled(true);
+         goLineAction->setEnabled(true);
+          timeAction->setEnabled(true);
+          clipMenu->setEnabled(true);
+          selectAction->setEnabled(true);
+
+     }
+ }
+
+ void MainWindow::autosavefiles()
+  {
+      editor->autoSaveAll();
+      qDebug()<<"timeout";
+
+  }
+ void MainWindow::updateSetting()
+   {
+    QSettings set;
+    bool saveFlag=set.value("AUTOSAVE",false).toBool();
+    int saveTime=set.value("SAVE_TIME",5).toInt();
+    autosaveTimer.setInterval(saveTime*60000);
+    // qDebug()<<"setting here1";
+    if(saveFlag)
+    {
+      //  qDebug()<<"setting here2";
+        autosaveTimer.start();
+    }
+    else
+    {
+        autosaveTimer.stop();
+    }
+
+   }

@@ -17,43 +17,48 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
  *                                                                         *
  ***************************************************************************/
-#ifndef BROWSER_H
-#define BROWSER_H
+#ifndef FINDDIALOG_H
+#define FINDDIALOG_H
 
 #include <QWidget>
-#include<QListWidget>
-#include<QTreeWidget>
+#include<QDialog>
+#include<QLabel>
+#include<QLineEdit>
+#include<QCheckBox>
+#include<QPushButton>
 
-class Browser : public QWidget
+class FindWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Browser(QWidget *parent = 0);
-    void addfile(QString name,QString desc);
-    void showContextMenu(QTreeWidgetItem * item,const QPoint& gPos);
-    bool checkOpenedFile(QString name,QString path);
-    void removeAll();
-    void removeAllBut();
+    explicit FindWidget(QWidget *parent = 0);
 
 signals:
-    void showFile(QString filePath);
-    void closeFile(QString filename,QString filePath);
+    void findWidgetclosed();
+    void findPrevSig();
+    void findNxtSig(const QString &expr,bool re,bool cs,bool wo,bool wrap);
+    void replaceSig(const QString &rep);
+    void replaceAllSig();
 
 public slots:
-
-    void itemDClicked(QTreeWidgetItem * item, int column);
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showFileAction();
-    void removefile();
-   void openFolder();
-   void changeFilename(QString oldname,QString oldPath,QString newPath);
-    void removeChild(QString name,QString path);
+void emitFindWidgetclose();
+void emitFindNxt();
+void emitFindPrev();
+void emitReplace();
+void emitReplaceAll();
 private:
-    QListWidget*fileList;
-    QTreeWidget *filesTree;
-    QTreeWidgetItem *filesRoot;
-    QTreeWidgetItem *itemPopup;
-
+    QLabel *findLabel;
+    QLabel *replaceLabel;
+    QLineEdit *findText;
+    QLineEdit *replaceText;
+    QCheckBox *wholeWordFlag;
+    QCheckBox *matchCaseFlag;
+    QCheckBox *regExpFlag;
+    QCheckBox *wrapFlag;
+    QPushButton *findNxtBtn;
+    QPushButton *findPrevBtn;
+    QPushButton *replaceBtn;
+    QPushButton *replaceAllBtn;
 };
 
-#endif // BROWSER_H
+#endif // FINDDIALOG_H

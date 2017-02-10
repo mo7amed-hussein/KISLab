@@ -1,3 +1,22 @@
+/***************************************************************************
+ *   Copyright (C) 2017 by Mohamed Hussein                                 *
+ *   m.hussein1389@gmail.com                                               *
+     https://github.com/mo7amed-hussein/                                   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
+ *                                                                         *
+ ***************************************************************************/
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include "editor.h"
@@ -6,8 +25,9 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QLabel>
+#include<QTimer>
 #include<QEvent>
-#include <finddialog.h>
+#include <findwidget.h>
 #include<aboutdialog.h>
 #define MAX_RECENT_FILES  6
 
@@ -23,8 +43,6 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void createActions();
-    void createToolBar();
-    void createMenuBar();
     void createWidgets();
     void createStatusBar();
 
@@ -53,8 +71,12 @@ public:
     void readSetting();
     void saveSetting();
 
+    void addRecentFile(QString &file);
+    void updateSetting();
+
 
  public slots:
+    void autosavefiles();
     void updateStatusBar(int l,int c);
     void toggleStatusbar();
     void goLineSlot();
@@ -69,6 +91,9 @@ public:
     void fileChangedSlot(bool s);
     void openRecent();
     void createRecentfilesActions();
+
+    void openSetting();
+     void noFilesChanged(bool b);
 
  protected:
 
@@ -85,8 +110,8 @@ private :
 
     QDockWidget *terminalDock;
     QDockWidget *browserDock;
-    FindDialog *findDialog;
-    QAction *recentFilesActions[MAX_RECENT_FILES];
+
+
     QList<RecentFile> recentFiles;
     QList<QAction*> recentActions;
     QAction *undoAction;
@@ -94,9 +119,19 @@ private :
     QAction *copyAction;
     QAction *cutAction;
     QAction *pasteAction;
+    QAction *fileStatAction;
+    QMenu *searchMenu;
+    QAction *timeAction;
+    QMenu *clipMenu;
+    QAction *selectAction;
+    QAction *findAction;
+    QAction *goLineAction;
     QAction *delAction;
     QMenu * caseMenu;
     QMenu *fileMenu;
+    QAction *quitAction;
+    QTime lastActivated;
+    QTimer autosaveTimer;
 };
 
 #endif // MAINWINDOW_H

@@ -17,43 +17,39 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
  *                                                                         *
  ***************************************************************************/
-#ifndef BROWSER_H
-#define BROWSER_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
-#include <QWidget>
-#include<QListWidget>
-#include<QTreeWidget>
+//lexer names
+#define BATCH "batch"
+#define CPP "cpp"
+#define CSHarP "c#"
+#define CMAKE "cmake"
+#define COFFEESCRIPT "coffeeScript"
+#define CSS "css"
+#define D "d"
+#define DIFF "diff"
+#define FORTRAN "fortran"
+#define FORTRAN77 "fortran77"
+#define HTML "html"
+#define JAVA "java"
+#define JAVASCRIPT "javaScript"
+#define LUA "lua"
+#define MAKEFILE "make"
+#define MATLAB "matlab"
+#define PASCAL "pascal"
+#define PERL "perl"
+#define PYTHON "python"
+#define POSTSCRIPT "postscript"
+#define PROPERTIES "properties"
+#define RUBY "ruby"
+#define SQL "sql"
+#define TCL "tcl"
+#define TEX "teX"
+#define VHDL "vhdl"
+#define VERILOG "verilog"
+#define XML "xml"
+#define YAML "yaml"
 
-class Browser : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit Browser(QWidget *parent = 0);
-    void addfile(QString name,QString desc);
-    void showContextMenu(QTreeWidgetItem * item,const QPoint& gPos);
-    bool checkOpenedFile(QString name,QString path);
-    void removeAll();
-    void removeAllBut();
 
-signals:
-    void showFile(QString filePath);
-    void closeFile(QString filename,QString filePath);
-
-public slots:
-
-    void itemDClicked(QTreeWidgetItem * item, int column);
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showFileAction();
-    void removefile();
-   void openFolder();
-   void changeFilename(QString oldname,QString oldPath,QString newPath);
-    void removeChild(QString name,QString path);
-private:
-    QListWidget*fileList;
-    QTreeWidget *filesTree;
-    QTreeWidgetItem *filesRoot;
-    QTreeWidgetItem *itemPopup;
-
-};
-
-#endif // BROWSER_H
+#endif // CONFIG_H

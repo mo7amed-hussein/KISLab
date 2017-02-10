@@ -17,43 +17,34 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
  *                                                                         *
  ***************************************************************************/
-#ifndef BROWSER_H
-#define BROWSER_H
+#ifndef TIMEDIALOG_H
+#define TIMEDIALOG_H
 
 #include <QWidget>
+#include<QDialog>
 #include<QListWidget>
-#include<QTreeWidget>
+#include<QVBoxLayout>
 
-class Browser : public QWidget
+class TimeDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit Browser(QWidget *parent = 0);
-    void addfile(QString name,QString desc);
-    void showContextMenu(QTreeWidgetItem * item,const QPoint& gPos);
-    bool checkOpenedFile(QString name,QString path);
-    void removeAll();
-    void removeAllBut();
+    explicit TimeDialog(QWidget *parent = 0);
+
+    //get time and date format
+    QString getFormat();
 
 signals:
-    void showFile(QString filePath);
-    void closeFile(QString filename,QString filePath);
 
 public slots:
-
-    void itemDClicked(QTreeWidgetItem * item, int column);
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showFileAction();
-    void removefile();
-   void openFolder();
-   void changeFilename(QString oldname,QString oldPath,QString newPath);
-    void removeChild(QString name,QString path);
+    //assign selected format to format string
+    //insert button slot
+    void insert();
 private:
-    QListWidget*fileList;
-    QTreeWidget *filesTree;
-    QTreeWidgetItem *filesRoot;
-    QTreeWidgetItem *itemPopup;
-
+    //available time and date formats
+    QListWidget *formats;
+    //selected time and date format
+    QString format;
 };
 
-#endif // BROWSER_H
+#endif // TIMEDIALOG_H

@@ -1,12 +1,35 @@
+/***************************************************************************
+ *   Copyright (C) 2017 by Mohamed Hussein                                 *
+ *   m.hussein1389@gmail.com                                               *
+     https://github.com/mo7amed-hussein/                                   *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
+ *                                                                         *
+ ***************************************************************************/
 #include "texteditor.h"
 
 TextEditor::TextEditor(QWidget *parent) : QsciScintilla(parent)
 {
-    initializeEditor();
+    initEditor();
     filename=new QString();
     fileFullPath=new QString();
     lastModified=new QDateTime();
     this->setAcceptDrops(false);
+    changeFlag=false;
+    readonly=false;
+    setModified(false);
+    this->setUtf8(true);
 }
 
 TextEditor::~TextEditor()
@@ -15,97 +38,17 @@ TextEditor::~TextEditor()
     delete fileFullPath;
 }
 
-void TextEditor::initializeEditor()
+void TextEditor::initEditor()
 
   {
-
-      // codes based from http://eli.thegreenplace.net/2011/04/01/sample-using-qscintilla-with-pyqt/
-
-      initializeFont();
-
-      initializeMargin();
-
-      initializeCaretLine();
-
-      initializeLexer();
-
-      // code based on QSciTE https://code.google.com/p/qscite/
-
-      initializeFolding();
-
-  }
-
-
-void TextEditor::initializeFont()
-
-{
-
-    QFont font("Courier", 14);
-
-    font.setFixedPitch(true);
-
-    this->setFont(font);
-
-}
-
-void TextEditor::initializeMargin()
-
-{
-
-    QFontMetrics fontmetrics = QFontMetrics(this->font());
-
-    this->setMarginsFont(this->font());
-
-    this->setMarginWidth(0, fontmetrics.width(QString::number(this->lines())) + 25);
 
     this->setMarginLineNumbers(0, true);
 
     this->setMarginsBackgroundColor(QColor("#cccccc"));
 
-
-
-   // connect(TextEditor, SIGNAL(textChanged()), this, SLOT(onTextChanged()));
-
-}
-void TextEditor::initializeLexer()
-
-  {
-
-      QsciLexerCPP *lexer = new QsciLexerCPP();
-
-      lexer->setDefaultFont(this->font());
-
-
-      lexer->setFoldComments(true);
-
-      this->setLexer(lexer);
-      this->autoCompleteFromAll();
-      this->setAutoCompletionSource(AcsAll);
-      this->setAutoCompletionThreshold(3);
-
-     // QsciStyledText *newstyle=new QsciStyledText ("main",QsciStyle(12,"",QColor("#cccccc"),QColor("#cccccc"),this->font()));
-      //newstyle->apply(this);
-     // lexer->findChild("main",Qt::FindChildrenRecursively);
-
-
-  }
-
-
-void TextEditor::initializeCaretLine()
-
-{
-
-    // Current line visible with special background color
-
     this->setCaretLineVisible(true);
 
     this->setCaretLineBackgroundColor(QColor("#ffe4e4"));
-
-}
-
-void TextEditor::initializeFolding()
-
-{
 
     QsciScintilla::FoldStyle state =
 
@@ -117,7 +60,18 @@ void TextEditor::initializeFolding()
 
     this->setFolding(state);
 
-}
+
+  }
+
+
+
+
+
+
+
+
+
+
 
 void TextEditor::setFileName(QString f)
 {
@@ -162,3 +116,23 @@ void TextEditor::setLastModified(QDateTime lm)
 }
 
 
+bool TextEditor::isChanged()
+{
+    return changeFlag;
+
+}
+
+void TextEditor::setChanged(bool b)
+{
+ changeFlag=b;
+}
+
+bool TextEditor::checkReadOnly()
+{
+    return readonly;
+}
+
+void TextEditor::fileReadOnly()
+{
+    readonly=true;
+}

@@ -17,43 +17,45 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
  *                                                                         *
  ***************************************************************************/
-#ifndef BROWSER_H
-#define BROWSER_H
+#ifndef LEXERFACTORY_H
+#define LEXERFACTORY_H
 
-#include <QWidget>
-#include<QListWidget>
-#include<QTreeWidget>
-
-class Browser : public QWidget
+#include <Qsci/qscilexer.h>
+#include <Qsci/qscilexerbatch.h>
+#include <Qsci/qscilexercpp.h>
+#include <Qsci/qscilexercmake.h>
+#include <Qsci/qscilexercoffeescript.h>
+#include <Qsci/qscilexercsharp.h>
+#include <Qsci/qscilexercss.h>
+#include <Qsci/qscilexerd.h>
+#include <Qsci/qscilexerdiff.h>
+#include <Qsci/qscilexerfortran.h>
+#include <Qsci/qscilexerfortran77.h>
+#include <Qsci/qscilexerhtml.h>
+#include <Qsci/qscilexerjava.h>
+#include <Qsci/qscilexerjavascript.h>
+#include <Qsci/qscilexerlua.h>
+#include <Qsci/qscilexermakefile.h>
+#include <Qsci/qscilexermatlab.h>
+#include <Qsci/qscilexerpascal.h>
+#include <Qsci/qscilexerperl.h>
+#include <Qsci/qscilexerpostscript.h>
+#include <Qsci/qscilexerproperties.h>
+#include <Qsci/qscilexerpython.h>
+#include <Qsci/qscilexerruby.h>
+#include <Qsci/qscilexersql.h>
+#include <Qsci/qscilexertcl.h>
+#include <Qsci/qscilexertex.h>
+#include <Qsci/qscilexerverilog.h>
+#include <Qsci/qscilexervhdl.h>
+#include <Qsci/qscilexerxml.h>
+#include <Qsci/qscilexeryaml.h>
+class LexerFactory
 {
-    Q_OBJECT
 public:
-    explicit Browser(QWidget *parent = 0);
-    void addfile(QString name,QString desc);
-    void showContextMenu(QTreeWidgetItem * item,const QPoint& gPos);
-    bool checkOpenedFile(QString name,QString path);
-    void removeAll();
-    void removeAllBut();
-
-signals:
-    void showFile(QString filePath);
-    void closeFile(QString filename,QString filePath);
-
-public slots:
-
-    void itemDClicked(QTreeWidgetItem * item, int column);
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showFileAction();
-    void removefile();
-   void openFolder();
-   void changeFilename(QString oldname,QString oldPath,QString newPath);
-    void removeChild(QString name,QString path);
-private:
-    QListWidget*fileList;
-    QTreeWidget *filesTree;
-    QTreeWidgetItem *filesRoot;
-    QTreeWidgetItem *itemPopup;
-
+    LexerFactory();
+    QsciLexer* getLexer(QString lex);
+    QString getFileType(QString &filenam);
 };
 
-#endif // BROWSER_H
+#endif // LEXERFACTORY_H
